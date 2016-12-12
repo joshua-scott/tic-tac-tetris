@@ -35,7 +35,10 @@ namespace TicTacTetris
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
-            game.Move(e.Key);
+            if (e.Key == Key.Escape)
+                this.Close();
+            else
+                game.Move(e.Key);
         }
     }
 }

@@ -20,7 +20,7 @@ namespace TicTacTetris
         private int leftMiddleBoundary, middleRightBoundary, rightUpperBoundary;    // canvas boundaries
 
         private int ballsRemaining = 9;
-        private bool[] balls = new bool[9];     // array of the 9 bools is a ball, where false = blue and true = red
+        private char[] balls = new char[9];     // array of 9 chars where each char is a ball where 'b' = blue and 'r' = red
         private Ellipse ball;               
         private int xPos, yPos;                 // for ball position
         private int tickInMillis = 60;          // dispatcherTimer tick speed (decreases each level)
@@ -38,6 +38,14 @@ namespace TicTacTetris
         {
             this.canvas = c;
             window = m;
+
+            NewGame();
+        }
+
+        private void NewGame()
+        {
+            // tidy canvas
+            canvas.Children.Clear();
 
             // set boundaries
             leftMiddleBoundary = (int)canvas.Width / 3;
@@ -72,8 +80,28 @@ namespace TicTacTetris
                 canvas.Children.Add(rect[i]);
             }
 
-            InitBalls();
+            // Clear dispatcher timer
+            if (dispatcherTimer != null)
+            {
+                dispatcherTimer.Stop();
+                dispatcherTimer = null;
+            }
+
+            // Reset variables
+            score = 0;
+            totalScore = 0;
+            tickInMillis = 60;
+            level = 1;
+            ballsRemaining = 9;
+
+            // Update displayed info
+            window.levelInfo.Content = level;
+            window.scoreInfo.Content = score;
+            window.totalInfo.Content = totalScore;
             UpdateSpeed();
+
+            ClearTiles();
+            InitBalls();
             Play();
         }
 
@@ -83,9 +111,9 @@ namespace TicTacTetris
             for (int i = 0; i < 9; i++)
             {
                 if (rnd.NextDouble() >= 0.5)
-                    balls[i] = true;
+                    balls[i] = 'r';
                 else
-                    balls[i] = false;
+                    balls[i] = 'b';
             }
         }
 
@@ -108,14 +136,30 @@ namespace TicTacTetris
                     UpdateSpeed();
                     Play();
                 }
+                // LevelUp returned false so end is reached. Prompt to play again or quit
                 else
                 {
-                    MessageBox.Show("Your score: " + totalScore);                                            // possibly add a 'play again?' prompt here
+                    MessageBoxResult choice = MessageBox.Show("Your score: " + totalScore + ". Play again?", "All levels complete!", MessageBoxButton.YesNo);
+
+                    if (choice == MessageBoxResult.Yes)
+                    {
+                        NewGame();
+                    }
+                    else
+                    {
+                        window.Close();
+                    }
                 }
             }
             else
             {
                 GetNextBall();
+
+                if (dispatcherTimer != null)        
+                {
+                    dispatcherTimer.Stop();
+                    dispatcherTimer = null;
+                }
 
                 // Start timer which will trigger ball movement
                 dispatcherTimer = new DispatcherTimer();
@@ -169,10 +213,13 @@ namespace TicTacTetris
                 yPos += 10;         // Lower its position if it's not reached the bottom
             else
             {
-                dispatcherTimer.Stop();
-                dispatcherTimer = null;
-                ballsRemaining--;
-                PlaceBallInSlot();
+                if (dispatcherTimer != null)
+                {
+                    dispatcherTimer.Stop();
+                    dispatcherTimer = null;
+                    ballsRemaining--;
+                    PlaceBallInSlot();
+                }
             }
         }
 
@@ -213,7 +260,16 @@ namespace TicTacTetris
             }
             else                                        // column is full
             {
-                MessageBox.Show("Game Over", "You lose!"); 
+                MessageBoxResult choice = MessageBox.Show("You lose! Your score: " + totalScore + ". Play again?", "Game Over", MessageBoxButton.YesNo);
+
+                if (choice == MessageBoxResult.Yes)
+                {
+                    NewGame();
+                }
+                else
+                {
+                    window.Close();
+                }
             }
             
             // Remove ball
@@ -281,7 +337,7 @@ namespace TicTacTetris
             ball.Height = 80;
             ball.Width = ball.Height;
 
-            if (balls[9 - ballsRemaining])   // access the next ball and set correct colour
+            if (balls[9 - ballsRemaining] == 'r')   // access the next ball and set correct colour
                 ball.Fill = Brushes.Red;
             else
                 ball.Fill = Brushes.Blue;
