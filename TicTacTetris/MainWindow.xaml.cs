@@ -29,8 +29,6 @@ namespace TicTacTetris
         private void canvas_Loaded(object sender, RoutedEventArgs e)
         {
             game = new Game(canvas, this);
-            //MessageBox.Show("loaded");
-            //game.Play();
         }
 
         private void Window_KeyDown(object sender, KeyEventArgs e)

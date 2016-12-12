@@ -130,6 +130,9 @@ namespace TicTacTetris
                 if (LevelUp())
                 {
                     window.levelInfo.Content = level;
+                    score = 0;
+                    window.scoreInfo.Content = score;
+                    tickInMillis -= 5;
                     ClearTiles();
                     InitBalls();
                     ballsRemaining = 9;
@@ -142,13 +145,9 @@ namespace TicTacTetris
                     MessageBoxResult choice = MessageBox.Show("Your score: " + totalScore + ". Play again?", "All levels complete!", MessageBoxButton.YesNo);
 
                     if (choice == MessageBoxResult.Yes)
-                    {
                         NewGame();
-                    }
                     else
-                    {
                         window.Close();
-                    }
                 }
             }
             else
@@ -179,31 +178,20 @@ namespace TicTacTetris
 
         private void ClearTiles()
         {
-            foreach (var r in rect)
-            {
-                r.Fill = Brushes.Gray;
-            }
-
             for (int i = 0; i < 9; i++)
             {
+                rect[i].Fill = Brushes.Gray;
                 slots[i] = 'n';
             }
+                
         }
 
         private bool LevelUp()
         {
             if (++level > 10)
-            {
-                // last level done, end reached
-                return false;
-            }
+                return false;   // last level done, end reached
             else
-            {
-                score = 0;
-                window.scoreInfo.Content = score;
-                tickInMillis -= 5;
                 return true;
-            }
         }
 
         private void dispatcherTimer_Tick(object sender, EventArgs e)
@@ -263,13 +251,9 @@ namespace TicTacTetris
                 MessageBoxResult choice = MessageBox.Show("You lose! Your score: " + totalScore + ". Play again?", "Game Over", MessageBoxButton.YesNo);
 
                 if (choice == MessageBoxResult.Yes)
-                {
                     NewGame();
-                }
                 else
-                {
                     window.Close();
-                }
             }
             
             // Remove ball
@@ -363,6 +347,8 @@ namespace TicTacTetris
                 xPos -= 70;
             else if (key == Key.Right)
                 xPos += 70;
+            else if (key == Key.Down)
+                yPos = 501;
         }
     }
 }
