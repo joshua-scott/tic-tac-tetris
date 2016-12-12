@@ -20,7 +20,7 @@ namespace TicTacTetris
         private int leftMiddleBoundary, middleRightBoundary, rightUpperBoundary;    // canvas boundaries
 
         private int ballsRemaining = 9;
-        private char[] balls = new char[9];     // array of 9 chars where each char is a ball where 'b' = blue and 'r' = red
+        private char[] balls = new char[9];     // array of 9 chars where each char is a ball where 'b' = blue, 'r' = red, 'g' = gold
         private Ellipse ball;               
         private int xPos, yPos;                 // for ball position
         private int tickInMillis = 60;          // dispatcherTimer tick speed (decreases each level)
@@ -107,10 +107,15 @@ namespace TicTacTetris
 
         private void InitBalls()
         {
-            // Initialise 9 balls (randomly red or blue)
+            // Initialise 9 balls (randomly red or blue... or gold)
             for (int i = 0; i < 9; i++)
             {
-                if (rnd.NextDouble() >= 0.5)
+                double random = rnd.NextDouble();
+
+                // ~10% chance of gold, 45% red, 45% blue
+                if (random >= 0.45 && random < 0.55)
+                    balls[i] = 'g';
+                else if (rnd.NextDouble() >= 0.55)
                     balls[i] = 'r';
                 else
                     balls[i] = 'b';
@@ -219,8 +224,10 @@ namespace TicTacTetris
             char color;
             if (ball.Fill == Brushes.Red)
                 color = 'r';
-            else
+            else if (ball.Fill == Brushes.Blue)
                 color = 'b';
+            else
+                color = 'g';
 
             // Colour correct slot
             int column;
@@ -269,39 +276,9 @@ namespace TicTacTetris
         {
             int count = 0;
 
-            // If middle tile is coloured, check lines that go through it
-            char middleTile = slots[4];
-            if (middleTile != 'n')
-            {
-                if (slots[1] == middleTile && slots[7] == middleTile)       // vertical through middle
-                    count++;
-                if (slots[3] == middleTile && slots[5] == middleTile)       // horizontal through middle
-                    count++;
-                if (slots[0] == middleTile && slots[8] == middleTile)       // diagonal from top-left
-                    count++;
-                if (slots[2] == middleTile && slots[6] == middleTile)       // diagonal from top-right
-                    count++;
-            }
-
-            // Same for top-left tile
-            char topLeft = slots[0];
-            if (topLeft != 'n')
-            {
-                if (slots[3] == topLeft && slots[6] == topLeft)       // vertical along left column
-                    count++;
-                if (slots[1] == topLeft && slots[2] == topLeft)       // horizontal along top row
-                    count++;
-            }
-
-            // Same for bottom-right tile
-            char bottomRight = slots[8];
-            if (bottomRight != 'n')
-            {
-                if (slots[5] == bottomRight && slots[2] == bottomRight)       // vertical along right column
-                    count++;
-                if (slots[6] == bottomRight && slots[7] == bottomRight)       // horizontal along bottom row
-                    count++;
-            }
+            count += CountLines('r');   // count red/gold lines
+            count += CountLines('b');   // count blue/gold lines
+            count -= CountLines('g');   // minus gold-only lines (to prevent them being counted twice)
 
             if (count > score)
             {
@@ -315,16 +292,64 @@ namespace TicTacTetris
             window.scoreInfo.Content = score;
         }
 
+        private int CountLines(char color)
+        {
+            int count = 0;
+            bool[] isValid = new bool[9];
+
+            // Mark each tile as being either color/gold (valid), or not
+            for (int i = 0; i < 9; i++)
+            {
+                isValid[i] = false;
+                if (slots[i] == color || slots[i] == 'g')
+                    isValid[i] = true;
+            }
+            // If centre tile is valid, check incident lines (i.e. lines that could go through it)
+            if (isValid[4])
+            {
+                if (isValid[1] && isValid[7])       // vertical through middle
+                    count++;
+                if (isValid[3] && isValid[5])       // horizontal through middle
+                    count++;
+                if (isValid[0] && isValid[8])       // diagonal from top-left
+                    count++;
+                if (isValid[2] && isValid[6])       // diagonal from top-right
+                    count++;
+            }
+            // If top-left is valid, check incident lines
+            if (isValid[0])
+            {
+                if (isValid[1] && isValid[2])                               // horizontal along top row
+                    count++;
+                if (isValid[3] && isValid[6])                               // vertical along left column
+                    count++;
+            }
+            // If bottom-right is valid, check incident lines
+            if (isValid[8])
+            {
+                if (isValid[6] && isValid[7])                               // horizontal along bottom row
+                    count++;
+                if (isValid[2] && isValid[5])                               // vertical along right column
+                    count++;
+            }
+
+            return count;
+        }
+
         private void GetNextBall()
         {
             ball = new Ellipse();
             ball.Height = 80;
             ball.Width = ball.Height;
 
-            if (balls[9 - ballsRemaining] == 'r')   // access the next ball and set correct colour
+            // access the next ball and set correct colour
+            char colour = balls[9 - ballsRemaining];
+            if (colour == 'r')
                 ball.Fill = Brushes.Red;
-            else
+            else if (colour == 'b')
                 ball.Fill = Brushes.Blue;
+            else
+                ball.Fill = Brushes.Gold;
         }
 
         private bool DrawBall()
